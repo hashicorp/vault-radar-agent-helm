@@ -54,16 +54,18 @@ export VAULT_RADAR_GIT_TOKEN=
 ### Deploy Agent to Kubernetes
 
 ```
+helm repo add hashicorp https://helm.releases.hashicorp.com
+helm repo update
+
 helm upgrade --install \
 --create-namespace \
 --namespace $NAMESPACE \
---set image.tag=$IMAGE_TAG \
 --set env.normal.HCP_PROJECT_ID=$HCP_PROJECT_ID \
 --set env.normal.HCP_RADAR_AGENT_POOL_ID=$HCP_RADAR_AGENT_POOL_ID \
 --set env.normal.HCP_CLIENT_ID=$HCP_CLIENT_ID \
 --set env.secrets.HCP_CLIENT_SECRET=$HCP_CLIENT_SECRET \
 --set env.secrets.VAULT_RADAR_GIT_TOKEN=$VAULT_RADAR_GIT_TOKEN \
-agent ./agent
+vault-radar-agent hashicorp/agent
 ```
 
 If you want to use vault kubernetes auth, add the following to the install command:
