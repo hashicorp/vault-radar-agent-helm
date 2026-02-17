@@ -1,0 +1,77 @@
+---
+{{- include "agent.validateWorkers" . -}}
+{{- range $workerName, $worker := .Values.workers.items }}
+{{- if $worker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agent.fullname" $ }}-{{ $worker.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "agent.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $worker.name }}
+spec:
+  replicas: {{ $worker.replicaCount | default $.Values.workers.defaults.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "agent.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $worker.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "agent.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ $worker.name }}
+        {{- with ($worker.podLabels | default $.Values.workers.defaults.podLabels) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with ($worker.podAnnotations | default $.Values.workers.defaults.podAnnotations) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "agent.serviceAccountName" $ }}
+      automountServiceAccountToken: true
+      {{- with $.Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: vault-radar-agent
+          image: "{{ $.Values.image.registry }}/{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          command: ["vault-radar"]
+          args: ["agent", "exec"]
+          {{- with $.Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with ($worker.resources | default $.Values.workers.defaults.resources) }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- include "agent.listEnvVariables" $ | nindent 12 }}
+            {{- /* Worker-specific environment variables (job type filtering) */ -}}
+            {{- range $key, $val := $worker.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+      {{- with ($worker.nodeSelector | default $.Values.workers.defaults.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with ($worker.affinity | default $.Values.workers.defaults.affinity) }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with ($worker.tolerations | default $.Values.workers.defaults.tolerations) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+{{- end }}
+{{- end }}

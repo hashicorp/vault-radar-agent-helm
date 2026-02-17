@@ -1,0 +1,39 @@
+name: update-helm-charts-index
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: read
+
+jobs:
+  update-helm-charts-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Verify Chart version matches tag version
+        run: |-
+          export TAG=${{ github.ref_name }}
+          git_tag="${TAG#v}"
+          chart_tag=$(yq -r '.version' helm/agent/Chart.yaml)
+          if [ "${git_tag}" != "${chart_tag}" ]; then
+            echo "chart version (${chart_tag}) did not match git version (${git_tag})"
+            exit 1
+          fi
+
+      - name: Update helm-charts index
+        env:
+          GH_TOKEN: ${{ secrets.HELM_CHARTS_GITHUB_TOKEN }}
+        run: |-
+          gh workflow run publish-charts.yml \
+            --repo hashicorp/helm-charts \
+            --ref main \
+            -f SOURCE_TAG="${{ github.ref_name }}" \
+            -f SOURCE_REPO="${{ github.repository }}" \
+            -f TEMPLATE_DIR="helm/agent"
+          echo "Triggered publish for ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/hashicorp/helm-charts/actions/workflows/publish-charts.yml" >> $GITHUB_STEP_SUMMARY
