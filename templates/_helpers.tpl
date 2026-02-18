@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "agent.name" -}}
+{{- define "vault-radar-agent.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "agent.fullname" -}}
+{{- define "vault-radar-agent.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | lower | replace " " "-" | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -24,17 +24,17 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "agent.chart" -}}
+{{- define "vault-radar-agent.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "agent.labels" -}}
-app: {{ include "agent.fullname" . }}
-helm.sh/chart: {{ include "agent.chart" . }}
-{{ include "agent.selectorLabels" . }}
+{{- define "vault-radar-agent.labels" -}}
+app: {{ include "vault-radar-agent.fullname" . }}
+helm.sh/chart: {{ include "vault-radar-agent.chart" . }}
+{{ include "vault-radar-agent.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -44,20 +44,20 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "agent.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "agent.name" . }}
+{{- define "vault-radar-agent.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "vault-radar-agent.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create env variables
 */}}
-{{- define "agent.listEnvVariables" -}}
+{{- define "vault-radar-agent.listEnvVariables" -}}
 {{- range $key, $val := .Values.env.secrets }}
 - name: {{ $key }}
   valueFrom:
     secretKeyRef:
-      name: "{{ include "agent.fullname" $ }}"
+      name: "{{ include "vault-radar-agent.fullname" $ }}"
       key: {{ $key }}
 {{- end }}
 {{- range $key, $val := .Values.env.normal }}
@@ -73,9 +73,9 @@ Create env variables
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "agent.serviceAccountName" -}}
+{{- define "vault-radar-agent.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
-    {{ default (include "agent.fullname" .) .Values.serviceAccount.name }}
+    {{ default (include "vault-radar-agent.fullname" .) .Values.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
@@ -84,15 +84,15 @@ Create the name of the service account to use
 {{/*
 Create cluster role binding name to use
 */}}
-{{- define "agent.clusterRoleBindingName" -}}
-{{- include "agent.fullname" . -}}
+{{- define "vault-radar-agent.clusterRoleBindingName" -}}
+{{- include "vault-radar-agent.fullname" . -}}
 {{- end -}}
 
 {{/*
 Validate workers: at least one enabled, deployment names don't exceed 63 chars
 */}}
-{{- define "agent.validateWorkers" -}}
-{{- $fullname := include "agent.fullname" . -}}
+{{- define "vault-radar-agent.validateWorkers" -}}
+{{- $fullname := include "vault-radar-agent.fullname" . -}}
 {{- $enabledWorkers := 0 -}}
 {{- range $name, $worker := .Values.workers.items -}}
 {{- if not $worker.name -}}
