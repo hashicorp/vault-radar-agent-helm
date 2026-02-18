@@ -21,4 +21,4 @@ keywords:
   - hashicorp
 
 sources:
-  - https://github.com/hashicorp/vault-scanning-and-insights-cli
+  - https://github.com/hashicorp/vault-radar-agent-helm
