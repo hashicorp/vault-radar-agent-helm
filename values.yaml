@@ -13,10 +13,10 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-securityContext:
+podSecurityContext:
   runAsNonRoot: true
 
-containerSecurityContext:
+securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
@@ -28,8 +28,6 @@ rbac:
 serviceAccount:
   name: ""
   create: true
-
-podSecurityContext: {}
 podAnnotations: {}
 podLabels: {}
 nodeSelector: {}

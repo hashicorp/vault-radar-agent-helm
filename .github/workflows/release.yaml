@@ -19,7 +19,7 @@ jobs:
         run: |-
           export TAG=${{ github.ref_name }}
           git_tag="${TAG#v}"
-          chart_tag=$(yq -r '.version' helm/agent/Chart.yaml)
+          chart_tag=$(yq -r '.version' Chart.yaml)
           if [ "${git_tag}" != "${chart_tag}" ]; then
             echo "chart version (${chart_tag}) did not match git version (${git_tag})"
             exit 1
@@ -34,6 +34,6 @@ jobs:
             --ref main \
             -f SOURCE_TAG="${{ github.ref_name }}" \
             -f SOURCE_REPO="${{ github.repository }}" \
-            -f TEMPLATE_DIR="helm/agent"
+            -f TEMPLATE_DIR="."
           echo "Triggered publish for ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "https://github.com/hashicorp/helm-charts/actions/workflows/publish-charts.yml" >> $GITHUB_STEP_SUMMARY
