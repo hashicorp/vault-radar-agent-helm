@@ -1,6 +1,6 @@
 apiVersion: v2
 name: vault-radar-agent
-description: A Helm chart for Vault Radar Agent
+description: Official HashiCorp Vault Radar Agent Chart
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
