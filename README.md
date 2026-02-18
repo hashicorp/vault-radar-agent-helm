@@ -65,7 +65,7 @@ helm upgrade --install --dry-run \
   --set env.normal.HCP_CLIENT_ID=$HCP_CLIENT_ID \
   --set env.secrets.HCP_CLIENT_SECRET=$HCP_CLIENT_SECRET \
   --set env.secrets.VAULT_RADAR_GIT_TOKEN=$VAULT_RADAR_GIT_TOKEN \
-  agent . --debug
+  vault-radar-agent . --debug
 ```
 
 ### Install
@@ -79,7 +79,7 @@ helm upgrade --install \
   --set env.normal.HCP_CLIENT_ID=$HCP_CLIENT_ID \
   --set env.secrets.HCP_CLIENT_SECRET=$HCP_CLIENT_SECRET \
   --set env.secrets.VAULT_RADAR_GIT_TOKEN=$VAULT_RADAR_GIT_TOKEN \
-  agent .
+  vault-radar-agent .
 ```
 
 To enable Vault Kubernetes auth, add the following flag to either command above:
@@ -91,7 +91,7 @@ To enable Vault Kubernetes auth, add the following flag to either command above:
 ### Uninstall
 
 ```shell
-helm uninstall agent -n $NAMESPACE
+helm uninstall vault-radar-agent -n $NAMESPACE
 ```
 
 ## Advanced Configuration
