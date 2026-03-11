@@ -1,38 +1,35 @@
-# Default values for agent.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Default values for Vault Radar Agent.
 
 image:
   registry: docker.io/hashicorp
   repository: vault-radar
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "" # Overrides the image tag whose default is the chart appVersion
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+imagePullSecrets: [] # Secrets for pulling images from private registries
+# - name: myRegistryKeySecretName
 
+nameOverride: "" # Override the chart name used in labels
+fullnameOverride: "" # Override the full resource name prefix
+
+# Pod-level security context (applies to all containers in the pod)
 podSecurityContext:
   runAsNonRoot: true
 
+# Container-level security context
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
       - ALL
 
+# Enable RBAC resources for Vault Kubernetes auth
 rbac:
   enabled: false
 
 serviceAccount:
-  name: ""
   create: true
-podAnnotations: {}
-podLabels: {}
-nodeSelector: {}
-tolerations: []
-affinity: {}
+  name: "" # Leave empty to auto-generate from release name
 
 # Environment variables (shared across all workers)
 env:
@@ -46,7 +43,7 @@ env:
     HCP_CLIENT_SECRET: ""
     VAULT_RADAR_GIT_TOKEN: ""
   optional:
-    VAULT_RADAR_LOG_LEVEL: "info"
+    VAULT_RADAR_LOG_LEVEL: "info" # or debug, warn, error
 
 # Each worker creates a separate Deployment within the same release
 # This allows different job types to have different scaling and resource configurations
@@ -74,7 +71,13 @@ workers:
       enabled: true
       name: "default"
       # replicaCount: 1 # Uses defaults.replicaCount if not specified
-      # resources: {}  # Uses defaults.resources if not specified
+      # resources: # Uses defaults.resources if not specified
+      #   limits:
+      #     cpu: 1000m
+      #     memory: 3072Mi
+      #   requests:
+      #     cpu: 100m
+      #     memory: 1024Mi
       env:
         AGENT_SERVICE_DISABLE_LIST: ""
 

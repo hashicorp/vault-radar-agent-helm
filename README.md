@@ -25,9 +25,9 @@ This is simply a bootstrap example and should be modified with best practices an
   - Copy and save `HCP_PROJECT_ID` and `HCP_RADAR_AGENT_POOL_ID` to use later
   - Select the "Install Agent" button
 
-## Set Environment Variables
+## Configure Your Values
 
-Collect the following values before running any Helm commands:
+Collect the following values before deploying:
 
 - `HCP_CLIENT_ID` — Client ID from the HCP service principal
 - `HCP_CLIENT_SECRET` — Client key from the HCP service principal
@@ -37,74 +37,88 @@ Collect the following values before running any Helm commands:
   - For GitHub or GitLab: use a personal access token (PAT)
   - For BitBucket and Azure DevOps: use the format `<username>:<PAT>`
 
-Export these as environment variables in your shell:
+Create a `my-radar-values.yaml` file with these values:
 
-```shell
-export NAMESPACE=vault-radar
-export HCP_PROJECT_ID=
-export HCP_RADAR_AGENT_POOL_ID=
-export HCP_CLIENT_ID=
-export HCP_CLIENT_SECRET=
-export VAULT_RADAR_GIT_TOKEN=
+```yaml
+env:
+  normal:
+    HCP_PROJECT_ID: "<your-project-id>"
+    HCP_RADAR_AGENT_POOL_ID: "<your-pool-id>"
+    HCP_CLIENT_ID: "<your-client-id>"
+  secrets:
+    HCP_CLIENT_SECRET: "<your-client-secret>"
+    VAULT_RADAR_GIT_TOKEN: "<your-git-token>"
 ```
 
-> **Note:** The image tag defaults to the `appVersion` declared in [Chart.yaml](Chart.yaml). To deploy a different version, add `--set image.tag=<version>` to any Helm command below.
+> **Note:** The image tag defaults to the `appVersion` in [Chart.yaml](Chart.yaml). Override in your values file:
+
+```yaml
+image:
+  tag: "0.42.0"
+```
 
 ## Deploy
 
-### Dry Run
+> **Tip:** For production, we recommend using a values file to manage configurations. See [values.yaml](values.yaml) for all available options.
 
-Validate the rendered manifests before installing:
+### Option 1: Using CLI flags (Quick Start)
+
+Export the required values as environment variables:
 
 ```shell
-helm upgrade --install --dry-run \
-  --create-namespace \
-  --namespace $NAMESPACE \
+export HCP_PROJECT_ID="<your-project-id>"
+export HCP_RADAR_AGENT_POOL_ID="<your-pool-id>"
+export HCP_CLIENT_ID="<your-client-id>"
+export HCP_CLIENT_SECRET="<your-client-secret>"
+export VAULT_RADAR_GIT_TOKEN="<your-git-token>"
+```
+
+Then deploy (use `--dry-run` first to validate):
+
+```shell
+helm upgrade --install vault-radar-agent hashicorp/vault-radar-agent \
+  --namespace vault-radar --create-namespace \
   --set env.normal.HCP_PROJECT_ID=$HCP_PROJECT_ID \
   --set env.normal.HCP_RADAR_AGENT_POOL_ID=$HCP_RADAR_AGENT_POOL_ID \
   --set env.normal.HCP_CLIENT_ID=$HCP_CLIENT_ID \
   --set env.secrets.HCP_CLIENT_SECRET=$HCP_CLIENT_SECRET \
-  --set env.secrets.VAULT_RADAR_GIT_TOKEN=$VAULT_RADAR_GIT_TOKEN \
-  vault-radar-agent . --debug
+  --set env.secrets.VAULT_RADAR_GIT_TOKEN=$VAULT_RADAR_GIT_TOKEN
 ```
 
-### Install
+### Option 2: Using a values file (Recommended)
+
+Deploy using the `my-radar-values.yaml` file you created above:
 
 ```shell
-helm upgrade --install \
-  --create-namespace \
-  --namespace $NAMESPACE \
-  --set env.normal.HCP_PROJECT_ID=$HCP_PROJECT_ID \
-  --set env.normal.HCP_RADAR_AGENT_POOL_ID=$HCP_RADAR_AGENT_POOL_ID \
-  --set env.normal.HCP_CLIENT_ID=$HCP_CLIENT_ID \
-  --set env.secrets.HCP_CLIENT_SECRET=$HCP_CLIENT_SECRET \
-  --set env.secrets.VAULT_RADAR_GIT_TOKEN=$VAULT_RADAR_GIT_TOKEN \
-  vault-radar-agent .
+helm upgrade --install vault-radar-agent hashicorp/vault-radar-agent \
+  --namespace vault-radar --create-namespace \
+  -f my-radar-values.yaml
 ```
 
-To enable Vault Kubernetes auth, add the following flag to either command above:
+**Enabling Vault Kubernetes auth:** Add to your values file:
 
-```shell
---set rbac.enabled="true" \
+```yaml
+rbac:
+  enabled: true
 ```
 
 ### Uninstall
 
 ```shell
-helm uninstall vault-radar-agent -n $NAMESPACE
+helm uninstall vault-radar-agent -n vault-radar
 ```
 
 ## Advanced Configuration
 
 ### Setting Log Level
 
-To deploy the agent with a specific log level, add the following flag to the install command:
+To deploy the agent with a specific log level, add to your values file:
 
-```shell
---set env.optional.VAULT_RADAR_LOG_LEVEL="<log-level>" \
+```yaml
+env:
+  optional:
+    VAULT_RADAR_LOG_LEVEL: "debug" # or info, warn, error
 ```
-
-where `<log-level>` is your desired log level (e.g. `debug`, `info`, `warn`, `error`).
 
 ### Deploying with Multiple Workers
 
@@ -118,14 +132,20 @@ By default, the chart deploys a single worker that handles all job types. Use th
 
 #### Multiple workers (separating job types)
 
-To deploy separate workers for different job types (e.g., isolate PR scanning from other scans), add the following flags to the [Install](#install) command:
+To deploy separate workers for different job types (e.g., isolate PR scanning from other scans), add to your values file:
 
-```shell
---set workers.items.default.env.AGENT_SERVICE_DISABLE_LIST="pull_request_scan" \
---set workers.items.prScan.enabled="true" \
---set workers.items.prScan.name="pr-scan" \
---set workers.items.prScan.replicaCount="2" \
---set workers.items.prScan.env.AGENT_SERVICE_ENABLE_LIST="pull_request_scan" \
+```yaml
+workers:
+  items:
+    default:
+      env:
+        AGENT_SERVICE_DISABLE_LIST: "pull_request_scan"
+    prScan:
+      enabled: true
+      name: "pr-scan"
+      replicaCount: 2
+      env:
+        AGENT_SERVICE_ENABLE_LIST: "pull_request_scan"
 ```
 
 This creates:
@@ -157,7 +177,7 @@ Use the `env` option to control which job types a worker handles:
 - `AGENT_SERVICE_ENABLE_LIST`: comma-separated list of job types to enable (worker handles **only** these)
 - `AGENT_SERVICE_DISABLE_LIST`: comma-separated list of job types to disable (worker handles **all except** these)
 
-> **Note:** You can only use one of these per worker, not both. When using `--set`, escape commas with `\,`.
+> **Note:** You can only use one of these per worker, not both.
 
 ##### Available job types
 
@@ -171,6 +191,10 @@ Use the `env` option to control which job types a worker handles:
 
 Example — disable PR scanning and content scanning on the default worker:
 
-```shell
---set workers.items.default.env.AGENT_SERVICE_DISABLE_LIST="pull_request_scan\,content_scan" \
+```yaml
+workers:
+  items:
+    default:
+      env:
+        AGENT_SERVICE_DISABLE_LIST: "pull_request_scan,content_scan"
 ```
