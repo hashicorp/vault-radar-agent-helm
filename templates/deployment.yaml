@@ -1,3 +1,5 @@
+# Copyright IBM Corp. 2026
+
 ---
 {{- include "vault-radar-agent.validateWorkers" . -}}
 {{- range $workerName, $worker := .Values.workers.items }}
