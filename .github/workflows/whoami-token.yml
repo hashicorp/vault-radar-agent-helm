@@ -1,0 +1,17 @@
+name: Token owner
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - Ian-Pruett-Print-Token-Owner
+
+permissions: {}
+
+jobs:
+  whoami:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print token owner
+        env:
+          GH_TOKEN: ${{ secrets.HELM_CHARTS_GITHUB_TOKEN }}
+        run: gh api user --jq .login
